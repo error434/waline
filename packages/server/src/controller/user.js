@@ -1,4 +1,3 @@
-const qs = require('node:querystring');
 const { PasswordHash } = require('phpass');
 const BaseRest = require('./rest');
 
@@ -81,7 +80,7 @@ module.exports = class extends BaseRest {
       const apiUrl =
         this.ctx.serverURL +
         '/verification?' +
-        qs.stringify({ token, email: data.email });
+        new URLSearchParams({ token, email: data.email });
 
       await notify.transporter.sendMail({
         from:

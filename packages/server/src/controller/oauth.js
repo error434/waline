@@ -1,4 +1,3 @@
-const qs = require('node:querystring');
 const jwt = require('jsonwebtoken');
 const { PasswordHash } = require('phpass');
 const request = require('request-promise-native');
@@ -19,12 +18,12 @@ module.exports = class extends think.Controller {
       type === 'twitter' ? oauth_token && oauth_verifier : Boolean(code);
     if (!hasCode) {
       const { serverURL } = this.ctx;
-      const redirectUrl = `${serverURL}/oauth?${qs.stringify({
+      const redirectUrl = `${serverURL}/oauth?${new URLSearchParams({
         redirect,
         type,
       })}`;
       return this.redirect(
-        `${oauthUrl}/${type}?${qs.stringify({
+        `${oauthUrl}/${type}?${new URLSearchParams({
           redirect: redirectUrl,
           state: this.ctx.state.token,
         })}`
@@ -37,18 +36,18 @@ module.exports = class extends think.Controller {
     const params = { code, oauth_verifier, oauth_token };
     if (type === 'facebook') {
       const { serverURL } = this.ctx;
-      const redirectUrl = `${serverURL}/oauth?${qs.stringify({
+      const redirectUrl = `${serverURL}/oauth?${new URLSearchParams({
         redirect,
         type,
       })}`;
-      params.state = qs.stringify({
+      params.state = new URLSearchParams({
         redirect: redirectUrl,
         state: this.ctx.state.token || '',
       });
     }
 
     const user = await request({
-      url: `${oauthUrl}/${type}?${qs.stringify(params)}`,
+      url: `${oauthUrl}/${type}?${new URLSearchParams(params)}`,
       method: 'GET',
       json: true,
       headers: {
