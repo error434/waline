@@ -174,30 +174,15 @@
             @input="onGifSearch"
           />
 
-          <masonry-wall
+          <ImageWall
             class="wl-gif-waterfall"
             :items="gifData.list"
             :column-width="200"
             :gap="6"
-            @scroll="onGifMasonryScroll"
+            @inset="insert($event)"
+            @scroll="onImageWallScroll"
           >
-            <template #default="slotProps">
-              <img
-                v-if="slotProps?.item"
-                @click="insert(`![](${slotProps?.item.media[0].tinygif.url})`)"
-                :src="slotProps?.item.media[0].tinygif.url"
-                :title="slotProps?.item.title"
-                loading="lazy"
-                :style="{
-                  width: '200px',
-                  height:
-                    (200 * slotProps?.item.media[0].tinygif.dims[1]) /
-                      slotProps?.item.media[0].tinygif.dims[0] +
-                    'px',
-                }"
-              />
-            </template>
-          </masonry-wall>
+          </ImageWall>
 
           <div v-if="gifData.loading" class="wl-loading">
             <LoadingIcon :size="30" />
@@ -272,6 +257,7 @@ import {
   watch,
 } from 'vue';
 
+import ImageWall from './ImageWall.vue';
 import {
   CloseIcon,
   EmojiIcon,
@@ -305,6 +291,7 @@ export default defineComponent({
     CloseIcon,
     EmojiIcon,
     ImageIcon,
+    ImageWall,
     MarkdownIcon,
     PreviewIcon,
     LoadingIcon,
@@ -621,21 +608,15 @@ export default defineComponent({
         showGif.value = false;
     };
 
-    const onGifSearch = throttle(async (event: Event) => {
-      gifData.value.cursor = '';
-      gifData.value.list = [];
-      onGifMasonryScroll(event);
-    });
-
-    const onGifMasonryScroll = async (event: Event): Promise<void> => {
+    const onImageWallScroll = async (event: Event): Promise<void> => {
       const { scrollTop, clientHeight, scrollHeight } =
         event.target as HTMLDivElement;
       const percent = (clientHeight + scrollTop) / scrollHeight;
-      if (percent < 0.9 || gifData.value.loading) {
-        return;
-      }
+
+      if (percent < 0.9 || gifData.value.loading) return;
 
       gifData.value.loading = true;
+
       const data = await fetchGif({
         keyword: gifSearchInputRef.value?.value || '',
         pos: gifData.value.cursor,
@@ -645,10 +626,17 @@ export default defineComponent({
 
       gifData.value.cursor = data.next;
       gifData.value.list = gifData.value.list.concat(data.results);
+
       setTimeout(() => {
         (event.target as HTMLDivElement).scrollTop = scrollTop;
       }, 50);
     };
+
+    const onGifSearch = throttle(async (event: Event) => {
+      gifData.value.cursor = '';
+      gifData.value.list = [];
+      onImageWallScroll(event);
+    });
 
     // update wordNumber
     watch(
@@ -675,10 +663,8 @@ export default defineComponent({
       { immediate: true }
     );
 
-    watch([showGif], async ([showGif]) => {
-      if (!showGif) {
-        return;
-      }
+    watch(showGif, async (showGif) => {
+      if (!showGif) return;
 
       gifData.value.loading = true;
       const data = await fetchGif({ keyword: '' }).finally(() => {
@@ -746,7 +732,7 @@ export default defineComponent({
       onLogout,
       onProfile,
       submitComment,
-      onGifMasonryScroll,
+      onImageWallScroll,
       onGifSearch,
 
       isLogin,
@@ -768,6 +754,7 @@ export default defineComponent({
       showEmoji,
 
       // gif
+      gifData,
       showGif,
 
       // image
@@ -786,7 +773,6 @@ export default defineComponent({
       gifPopupRef,
       imageUploadRef,
       gifSearchInputRef,
-      gifData,
     };
   },
 });
